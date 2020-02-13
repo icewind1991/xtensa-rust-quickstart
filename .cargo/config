@@ -1,6 +1,6 @@
 
 [target]
-runner = "xtensa-esp32-elf-gdb -q -x openocd.gdb"
+runner = { default = "xtensa-esp32-elf-gdb -q -x openocd.gdb" }
 
 
 [build]
