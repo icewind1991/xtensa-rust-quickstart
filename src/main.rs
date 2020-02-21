@@ -5,21 +5,22 @@
 use xtensa_lx6_rt as _;
 
 use core::panic::PanicInfo;
-use esp32;
+use esp8266;
 
 /// The default clock source is the onboard crystal
-/// In most cases 40mhz (but can be as low as 2mhz depending on the board) 
+/// In most cases 40mhz (but can be as low as 2mhz depending on the board)
 const CORE_HZ: u32 = 40_000_000;
 
 const BLINKY_GPIO: u32 = 2; // the GPIO hooked up to the onboard LED
 
 #[no_mangle]
 fn main() -> ! {
-    let dp = unsafe { esp32::Peripherals::steal() };
-    
+    let dp = unsafe { esp8266::Peripherals::steal() };
     let mut gpio = dp.GPIO;
-    configure_pin_as_output(&mut gpio, BLINKY_GPIO);
-    set_led(&mut gpio, BLINKY_GPIO, false);
+
+    // Set pin 2 to function GPIO2.
+    // Pin 2 is mapped to pad number 13.
+    dp.IO_MUX.gpio_pin13.write(|w| unsafe { w.bits(0 << 4) });
 
     configure_pin_as_output(&mut gpio, BLINKY_GPIO);
     loop {
@@ -30,18 +31,20 @@ fn main() -> ! {
     }
 }
 
-pub fn set_led(reg: &mut esp32::GPIO, idx: u32, val: bool) {
+pub fn set_led(reg: &mut esp8266::GPIO, idx: u32, val: bool) {
     if val {
-        reg.out_w1ts.modify(|_, w| unsafe { w.bits(0x1 << idx) });
+        reg.gpio_out_w1ts
+            .modify(|_, w| unsafe { w.bits(0x1 << idx) });
     } else {
-        reg.out_w1tc.modify(|_, w| unsafe { w.bits(0x1 << idx) });
+        reg.gpio_out_w1tc
+            .modify(|_, w| unsafe { w.bits(0x1 << idx) });
     }
 }
 
 /// Configure the pin as an output
-pub fn configure_pin_as_output(reg: &mut esp32::GPIO, gpio: u32){
-    reg.enable_w1ts.modify(|_, w| unsafe  { w.bits(0x1 << gpio) });
-    reg.func2_out_sel_cfg.modify(|_, w| unsafe { w.bits(0x100) });
+pub fn configure_pin_as_output(reg: &mut esp8266::GPIO, gpio: u32) {
+    reg.gpio_enable_w1ts
+        .modify(|_, w| unsafe { w.bits(0x1 << gpio) });
 }
 
 /// rough delay - as a guess divide your cycles by 20 (results will differ on opt level)
@@ -51,7 +54,6 @@ pub fn delay2(clocks: u32) {
         unsafe { core::ptr::read_volatile(&dummy_var) };
     }
 }
-
 
 /// cycle accurate delay using the cycle counter register
 pub fn delay(clocks: u32) {
@@ -72,7 +74,6 @@ pub fn get_ccount() -> u32 {
     unsafe { asm!("rsr.ccount a2" : "={a2}"(x) ) };
     x
 }
-
 
 /// Basic panic handler - just loops
 #[panic_handler]
