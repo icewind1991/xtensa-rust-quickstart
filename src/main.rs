@@ -18,9 +18,8 @@ fn main() -> ! {
     let dp = unsafe { esp8266::Peripherals::steal() };
     let mut gpio = dp.GPIO;
 
-    // Set pin 2 to function GPIO2.
-    // Pin 2 is mapped to pad number 13.
-    dp.IO_MUX.gpio_pin13.write(|w| unsafe { w.bits(0 << 4) });
+    // Set pin 2 to function GPIO.
+    dp.IO_MUX.io_mux_gpio2.write(|w| unsafe { w.bits(0) });
 
     configure_pin_as_output(&mut gpio, BLINKY_GPIO);
     loop {
