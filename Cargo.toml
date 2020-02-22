@@ -7,6 +7,8 @@ edition = "2018"
 [dependencies]
 xtensa-lx6-rt = { git = "https://github.com/esp-rs/xtensa-lx6-rt", rev = "89cea20c441d4a1624de99c7278df13af5c211a4" }
 esp8266 = "0.0.2"
+esp8266-hal = { path = "../esp8266-hal"}
+nb = "0.1.2"
 
 # NOTE: if you change this, remember to change all the scripts
 [[bin]]

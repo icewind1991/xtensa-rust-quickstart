@@ -5,72 +5,50 @@
 use xtensa_lx6_rt as _;
 
 use core::panic::PanicInfo;
-use esp8266;
-use esp8266::TIMER;
+use esp8266_hal::ehal::digital::v2::OutputPin;
+use esp8266_hal::ehal::timer::CountDown;
+use esp8266_hal::gpio::GpioExt;
+use esp8266_hal::timer::{Nanoseconds, Timer, TimerExt};
 
 const TEXT: &'static str = "Hello world!\r\n";
 
 /// The default clock source is the onboard crystal
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
-const CORE_HZ: u32 = 40_000_000;
+const CORE_HZ: u32 = 80_000_000;
 
-const BLINKY_GPIO: u32 = 2; // the GPIO hooked up to the onboard LED
+extern "C" {
+    fn rom_i2c_writeReg(block: u8, host_id: u8, reg_add: u8, data: u8);
+}
 
 #[no_mangle]
 fn main() -> ! {
+    // Initialize PLL.
+    // I'm not quite sure what this magic incantation means, but it does set the
+    // esp8266 to the right clock speed. Without this, it is running too slow.
+    unsafe {
+        rom_i2c_writeReg(103, 4, 1, 136);
+        rom_i2c_writeReg(103, 4, 2, 145);
+    }
+
     let dp = unsafe { esp8266::Peripherals::steal() };
-    let mut gpio = dp.GPIO;
+    let pins = dp.GPIO.split();
+    let mut pin = pins.gpio2.into_push_pull_output();
+    let mut timer = dp.TIMER.timer(CORE_HZ);
 
-    // Set pin 2 to function GPIO.
-    dp.IO_MUX.io_mux_gpio2.write(|w| unsafe { w.bits(0) });
-
-    // FRC1->CTRL = (1<<7) | (1<<6) | (2<<2);
-    // FRC1->LOAD = 0x3fffffu;  // set all 22 bits to 1
-    // FRC1->COUNT = 0x3fffffu; // set all 22 bits to 1
-
-    dp.TIMER
-        .frc1_ctrl
-        .write(|w| unsafe { w.bits((1 << 7) | (1 << 6) | (2 << 2)) });
-    dp.TIMER.frc1_load.write(|w| unsafe { w.bits(0x3fffff) });
-    dp.TIMER.frc1_count.write(|w| unsafe { w.bits(0x3fffff) });
-
-    configure_pin_as_output(&mut gpio, BLINKY_GPIO);
     loop {
-        set_led(&mut gpio, BLINKY_GPIO, true);
-        sleep_ns(100000000, &dp.TIMER);
+        pin.set_high().unwrap();
+        sleep_ms(100_000_000, &mut timer);
         for byte in TEXT.bytes() {
             dp.UART.uart_fifo.write(|w| unsafe { w.bits(byte as u32) })
         }
-        set_led(&mut gpio, BLINKY_GPIO, false);
-        sleep_ns(500000000, &dp.TIMER);
+        pin.set_low().unwrap();
+        sleep_ms(900_000_000, &mut timer);
     }
 }
 
-pub fn set_led(reg: &mut esp8266::GPIO, idx: u32, val: bool) {
-    if val {
-        reg.gpio_out_w1ts
-            .modify(|_, w| unsafe { w.bits(0x1 << idx) });
-    } else {
-        reg.gpio_out_w1tc
-            .modify(|_, w| unsafe { w.bits(0x1 << idx) });
-    }
-}
-
-/// Configure the pin as an output
-pub fn configure_pin_as_output(reg: &mut esp8266::GPIO, gpio: u32) {
-    reg.gpio_enable_w1ts
-        .modify(|_, w| unsafe { w.bits(0x1 << gpio) });
-}
-
-pub fn sleep_ns(ns: u64, timer: &TIMER) {
-    // 3600 = 1e9 / (80MHz / 256)
-    let ticks = (ns / 3600) as u32;
-    let start = timer.frc1_count.read().bits();
-    loop {
-        if (start - timer.frc1_count.read().bits() & 0x3fffff) > ticks {
-            break;
-        }
-    }
+fn sleep_ms(duration: u32, timer: &mut Timer) {
+    timer.start(Nanoseconds(duration));
+    nb::block!(timer.wait()).unwrap();
 }
 
 /// Basic panic handler - just loops
