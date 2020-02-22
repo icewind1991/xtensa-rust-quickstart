@@ -6,6 +6,7 @@ use xtensa_lx6_rt as _;
 
 use core::panic::PanicInfo;
 use esp8266;
+use esp8266::TIMER;
 
 /// The default clock source is the onboard crystal
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
@@ -21,12 +22,22 @@ fn main() -> ! {
     // Set pin 2 to function GPIO.
     dp.IO_MUX.io_mux_gpio2.write(|w| unsafe { w.bits(0) });
 
+    // FRC1->CTRL = (1<<7) | (1<<6) | (2<<2);
+    // FRC1->LOAD = 0x3fffffu;  // set all 22 bits to 1
+    // FRC1->COUNT = 0x3fffffu; // set all 22 bits to 1
+
+    dp.TIMER
+        .frc1_ctrl
+        .write(|w| unsafe { w.bits((1 << 7) | (1 << 6) | (2 << 2)) });
+    dp.TIMER.frc1_load.write(|w| unsafe { w.bits(0x3fffff) });
+    dp.TIMER.frc1_count.write(|w| unsafe { w.bits(0x3fffff) });
+
     configure_pin_as_output(&mut gpio, BLINKY_GPIO);
     loop {
         set_led(&mut gpio, BLINKY_GPIO, true);
-        delay(CORE_HZ);
+        sleep_ns(100000000, &dp.TIMER);
         set_led(&mut gpio, BLINKY_GPIO, false);
-        delay(CORE_HZ);
+        sleep_ns(500000000, &dp.TIMER);
     }
 }
 
@@ -46,32 +57,15 @@ pub fn configure_pin_as_output(reg: &mut esp8266::GPIO, gpio: u32) {
         .modify(|_, w| unsafe { w.bits(0x1 << gpio) });
 }
 
-/// rough delay - as a guess divide your cycles by 20 (results will differ on opt level)
-pub fn delay2(clocks: u32) {
-    let dummy_var: u32 = 0;
-    for _ in 0..clocks {
-        unsafe { core::ptr::read_volatile(&dummy_var) };
-    }
-}
-
-/// cycle accurate delay using the cycle counter register
-pub fn delay(clocks: u32) {
-    // NOTE: does not account for rollover
-    let target = get_ccount() + clocks;
+pub fn sleep_ns(ns: u64, timer: &TIMER) {
+    // 3600 = 1e9 / (80MHz / 256)
+    let ticks = (ns / 3600) as u32;
+    let start = timer.frc1_count.read().bits();
     loop {
-        if get_ccount() > target {
+        if (start - timer.frc1_count.read().bits() & 0x3fffff) > ticks {
             break;
         }
     }
-}
-
-/// Performs a special register read to read the current cycle count.
-/// In the future, this can be precompiled to a archive (.a) and linked to so we don't
-/// have to require the asm nightly feature - see cortex-m-rt for more details
-pub fn get_ccount() -> u32 {
-    let x: u32;
-    unsafe { asm!("rsr.ccount a2" : "={a2}"(x) ) };
-    x
 }
 
 /// Basic panic handler - just loops
