@@ -8,6 +8,8 @@ use core::panic::PanicInfo;
 use esp8266;
 use esp8266::TIMER;
 
+const TEXT: &'static str = "Hello world!\r\n";
+
 /// The default clock source is the onboard crystal
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
 const CORE_HZ: u32 = 40_000_000;
@@ -36,6 +38,9 @@ fn main() -> ! {
     loop {
         set_led(&mut gpio, BLINKY_GPIO, true);
         sleep_ns(100000000, &dp.TIMER);
+        for byte in TEXT.bytes() {
+            dp.UART.uart_fifo.write(|w| unsafe { w.bits(byte as u32) })
+        }
         set_led(&mut gpio, BLINKY_GPIO, false);
         sleep_ns(500000000, &dp.TIMER);
     }
