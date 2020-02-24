@@ -6,9 +6,11 @@ use xtensa_lx6_rt as _;
 
 use core::panic::PanicInfo;
 use esp8266_hal::ehal::digital::v2::OutputPin;
+use esp8266_hal::ehal::serial::Write;
 use esp8266_hal::ehal::timer::CountDown;
 use esp8266_hal::gpio::GpioExt;
 use esp8266_hal::timer::{Nanoseconds, Timer, TimerExt};
+use esp8266_hal::uart::UARTExt;
 
 const TEXT: &'static str = "Hello world!\r\n";
 
@@ -34,12 +36,13 @@ fn main() -> ! {
     let pins = dp.GPIO.split();
     let mut pin = pins.gpio2.into_push_pull_output();
     let mut timer = dp.TIMER.timer(CORE_HZ);
+    let mut serial = dp.UART0.serial();
 
     loop {
         pin.set_high().unwrap();
         sleep_ms(100_000_000, &mut timer);
         for byte in TEXT.bytes() {
-            dp.UART.uart_fifo.write(|w| unsafe { w.bits(byte as u32) })
+            serial.write(byte).unwrap();
         }
         pin.set_low().unwrap();
         sleep_ms(900_000_000, &mut timer);
