@@ -2,7 +2,7 @@
 #![no_main]
 #![feature(asm)]
 
-use xtensa_lx6_rt as _;
+use xtensa_lx106_rt as _;
 
 use core::panic::PanicInfo;
 use esp8266_hal::ehal::digital::v2::OutputPin;
@@ -18,20 +18,8 @@ const TEXT: &'static str = "Hello world!\r\n";
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
 const CORE_HZ: u32 = 80_000_000;
 
-extern "C" {
-    fn rom_i2c_writeReg(block: u8, host_id: u8, reg_add: u8, data: u8);
-}
-
 #[no_mangle]
 fn main() -> ! {
-    // Initialize PLL.
-    // I'm not quite sure what this magic incantation means, but it does set the
-    // esp8266 to the right clock speed. Without this, it is running too slow.
-    unsafe {
-        rom_i2c_writeReg(103, 4, 1, 136);
-        rom_i2c_writeReg(103, 4, 2, 145);
-    }
-
     let dp = unsafe { esp8266::Peripherals::steal() };
     let pins = dp.GPIO.split();
     let mut pin = pins.gpio2.into_push_pull_output();

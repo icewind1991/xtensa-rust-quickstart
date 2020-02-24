@@ -5,7 +5,7 @@ authors = ["Scott Mabin <MabezDev@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-xtensa-lx6-rt = { git = "https://github.com/esp-rs/xtensa-lx6-rt", rev = "89cea20c441d4a1624de99c7278df13af5c211a4" }
+xtensa-lx106-rt = { git = "https://github.com/icewind1991/xtensa-lx106-rt", rev = "2cc1e9b963ca2c2323a77562ad41ac620d8ae723" }
 esp8266 = "0.0.3"
 esp8266-hal = { path = "../esp8266-hal"}
 nb = "0.1.2"
