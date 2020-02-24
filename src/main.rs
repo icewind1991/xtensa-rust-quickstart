@@ -16,6 +16,7 @@ const TEXT: &'static str = "Hello world!\r\n";
 
 /// The default clock source is the onboard crystal
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
+/// Clock speed is then doubled from the crystal frequency
 const CORE_HZ: u32 = 80_000_000;
 
 #[no_mangle]
