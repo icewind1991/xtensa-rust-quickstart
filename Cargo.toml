@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 xtensa-lx106-rt = { git = "https://github.com/icewind1991/xtensa-lx106-rt", rev = "2cc1e9b963ca2c2323a77562ad41ac620d8ae723" }
-esp8266 = "0.0.3"
+esp8266 = { version = "0.0.3", path = "../esp8266" }
 esp8266-hal = { path = "../esp8266-hal"}
 nb = "0.1.2"
 

@@ -10,7 +10,7 @@ use esp8266_hal::ehal::serial::Write;
 use esp8266_hal::ehal::timer::CountDown;
 use esp8266_hal::gpio::GpioExt;
 use esp8266_hal::timer::{Nanoseconds, Timer, TimerExt};
-use esp8266_hal::uart::UARTExt;
+use esp8266_hal::uart::UART0Ext;
 
 const TEXT: &'static str = "Hello world!\r\n";
 
@@ -25,7 +25,9 @@ fn main() -> ! {
     let pins = dp.GPIO.split();
     let mut pin = pins.gpio2.into_push_pull_output();
     let mut timer = dp.TIMER.timer(CORE_HZ);
-    let mut serial = dp.UART0.serial();
+    let mut serial = dp
+        .UART0
+        .serial(pins.gpio1, pins.gpio3, pins.gpio13, pins.gpio15);
 
     loop {
         pin.set_high().unwrap();
