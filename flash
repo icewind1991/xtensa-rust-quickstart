@@ -1,9 +1,9 @@
 #!/bin/zsh
 
-xargo build
+xargo build || exit
 
 # change this for release flashes
-BIN_PATH=target/xtensa-esp32-none-elf/debug/esp32
+BIN_PATH=target/xtensa-esp32-none-elf/debug/esp8266
 
 rm $BIN_PATH.bin
 

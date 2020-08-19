@@ -1,12 +1,9 @@
 #!/bin/sh
 
-export XARGO_RUST_SRC=/home/robin/Projects/rust-xtensa/src/
-export RUSTC=/home/robin/Projects/rust-xtensa/build/bin/rustc
-
-cargo xbuild --release
+xargo build --release || exit
 
 # change this for release flashes
-BIN_PATH=target/xtensa-esp8266-none-elf/release/esp32
+BIN_PATH=target/xtensa-esp8266-none-elf/release/esp8266
 
 rm $BIN_PATH.bin*
 

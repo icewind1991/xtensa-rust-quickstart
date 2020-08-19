@@ -1,18 +1,18 @@
 [package]
-name = "esp32-test"
+name = "esp8266-test"
 version = "0.1.0"
-authors = ["Scott Mabin <MabezDev@gmail.com>"]
+authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 
 [dependencies]
 xtensa-lx106-rt = { git = "https://github.com/icewind1991/xtensa-lx106-rt", rev = "2cc1e9b963ca2c2323a77562ad41ac620d8ae723" }
-esp8266 = { version = "0.0.3", path = "../esp8266" }
-esp8266-hal = { path = "../esp8266-hal"}
+esp8266 = "0.0.4"
+esp8266-hal = "0.1.0"
 nb = "0.1.2"
 
 # NOTE: if you change this, remember to change all the scripts
 [[bin]]
-name = "esp32"
+name = "esp8266"
 path = "src/main.rs"
 
 [profile.dev]

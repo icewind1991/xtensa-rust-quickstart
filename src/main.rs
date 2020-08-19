@@ -6,13 +6,10 @@ use xtensa_lx106_rt as _;
 
 use core::panic::PanicInfo;
 use esp8266_hal::ehal::digital::v2::OutputPin;
-use esp8266_hal::ehal::serial::Write;
-use esp8266_hal::ehal::timer::CountDown;
+use esp8266_hal::ehal::digital::v2::ToggleableOutputPin;
+use esp8266_hal::ehal::timer::{CountDown};
 use esp8266_hal::gpio::GpioExt;
-use esp8266_hal::timer::{Nanoseconds, TimerExt};
-use esp8266_hal::uart::UART0Ext;
-
-const TEXT: &'static str = "Hello world!\r\n";
+use esp8266_hal::timer::{TimerExt, Nanoseconds};
 
 /// The default clock source is the onboard crystal
 /// In most cases 40mhz (but can be as low as 2mhz depending on the board)
@@ -23,21 +20,15 @@ const CORE_HZ: u32 = 80_000_000;
 fn main() -> ! {
     let dp = unsafe { esp8266::Peripherals::steal() };
     let pins = dp.GPIO.split();
-    let mut pin = pins.gpio2.into_push_pull_output();
-    let (_, mut timer2) = dp.TIMER.timers(CORE_HZ);
-    let mut serial = dp
-        .UART0
-        .serial(pins.gpio1, pins.gpio3, pins.gpio13, pins.gpio15);
+    let mut led = pins.gpio2.into_push_pull_output();
+    let (mut timer1, _) = dp.TIMER.timers(CORE_HZ);
+    timer1.start(Nanoseconds(100_000_000));
 
-    timer2.start(Nanoseconds(500_000_000));
+    led.set_high().unwrap();
+
     loop {
-        pin.set_high().unwrap();
-        nb::block!(timer2.wait()).unwrap();
-        for byte in TEXT.bytes() {
-            serial.write(byte).unwrap();
-        }
-        pin.set_low().unwrap();
-        nb::block!(timer2.wait()).unwrap();
+        nb::block!(timer1.wait()).unwrap();
+        led.toggle().unwrap();
     }
 }
 
