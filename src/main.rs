@@ -2,7 +2,7 @@
 #![no_main]
 #![feature(asm)]
 
-use xtensa_lx106_rt as _;
+use xtensa_lx106_rt::entry;
 
 use core::panic::PanicInfo;
 use esp8266_hal::ehal::digital::v2::OutputPin;
@@ -16,7 +16,7 @@ use esp8266_hal::timer::{TimerExt, Nanoseconds};
 /// Clock speed is then doubled from the crystal frequency
 const CORE_HZ: u32 = 80_000_000;
 
-#[no_mangle]
+#[entry]
 fn main() -> ! {
     let dp = unsafe { esp8266::Peripherals::steal() };
     let pins = dp.GPIO.split();
