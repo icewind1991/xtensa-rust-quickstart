@@ -5,8 +5,8 @@ authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 
 [dependencies]
-xtensa-lx106-rt = "0.0.1"
-esp8266-hal = "0.2.0"
+xtensa-lx106-rt = "0.1.0"
+esp8266-hal = "0.3.0"
 
 # NOTE: if you change this, remember to change all the scripts
 [[bin]]
