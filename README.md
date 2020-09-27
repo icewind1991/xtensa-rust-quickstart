@@ -5,72 +5,48 @@ Need help? Join the esp-rs room on matrix, https://matrix.to/#/#esp-rs:matrix.or
 
 ## Building
 
-### Requirements
+## Setting up the compiler
 
-#### llvm-xtensa
-Please refer to [Espressif's llvm](https://github.com/espressif/llvm-project) project for authoratative instructions.
+- setup the [xtensa rust](https://github.com/MabezDev/rust-xtensa) compiler.
 
-    $ git clone https://github.com/espressif/llvm-project
-    $ cd llvm-project/llvm
-    $ mkdir build
-    $ cd build
-    $ cmake .. -DLLVM_TARGETS_TO_BUILD="Xtensa;X86" -DCMAKE_BUILD_TYPE=Release -G "Ninja"
-    $ cmake --build .
+```
+$ git clone https://github.com/MabezDev/rust-xtensa
+$ cd rust-xtensa
+$ ./configure --experimental-targets=Xtens
+$ ./x.py build
+```
 
-Calling make with an appropriate number of threads will speed the process considerably.
+- link the custom rust build into rustup
 
-Many use the guideline `n + 1`, where `n` is the number of processor cores on your machine. For example, for a processor with 4 logical cores:
-    
-    $ make -j5
+```
+$ rustup toolchain link xtensa /path/to/rust-xtensa/build/x86_64-unknown-linux-gnu/stage1
+```
 
-#### rust-xtensa
-Please refer to the [rust-xtensa](https://github.com/MabezDev/rust-xtensa) project for authoratative instructions.
+- install the xtensa-lx106-elf toolchain from the [espressif web site](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/linux-setup.html).
 
-Assuming you built llvm in your home directory:
+```
+$ mkdir ~/esp
+$ tar -xzf ~/Downloads/xtensa-lx106-elf-linux64-1.22.0-100-ge567ec7-5.2.0.tar.gz -C ~/esp
+$ PATH="$PATH:$HOME/esp/xtensa-lx106-elf/bin"
+```
 
-    $ git clone https://github.com/MabezDev/rust-xtensa
-    $ cd rust-xtensa
-    $ git checkout xtensa-target
-    $ ./configure --llvm-root=$HOME/llvm-project/llvm/build
-    $ ./x.py build
+- install cargo-espflash
 
-#### xtensa-lx106-elf toolchain
-Instructions can be found [on Espressif's web site](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/linux-setup.html).
+```
+$ cargo install cargo-espflash
+```
 
-Download the archived toolchain file, and extract it to the directory of your choice. Then add the toolchain's bin/ directory to your `$PATH`. For example:
+## Build and flash
 
-    $ mkdir ~/esp
-    $ tar -xzf ~/Downloads/xtensa-lx106-elf-linux64-1.22.0-100-ge567ec7-5.2.0.tar.gz -C ~/esp
-    $ PATH="$PATH:$HOME/esp/xtensa-lx106-elf/bin"
+```
+$ cargo espflash --release /dev/ttyUSB0
+```
 
-#### xargo or cargo xbuild
-    $ cargo install xargo
-
-or
-
-    $ cargo install cargo-xbuild
-
-#### esptool
-    $ pip install esptool
-
-### Starting a new project
-    $ git clone https://github.com/MabezDev/xtensa-rust-quickstart
-
-### Workflow
-Update `CUSTOM_RUSTC` in `setenv` to point to the version of rust you compiled earlier. Then load the environment variables with `source setenv`.
-
-If you installed `xbuild` instead of `xargo`, you will need to update `flash` and `flash_release` accordingly.
-
-You should now be able to call xargo (or cargo xbuild) to build the project. You can also run the flash script to both build the project, and flash it to the ESP8266
-
-You might need to change which gpio pin is matched to your board's LED pin (`gpio2` in the provided example).
 
 ## Resources
 
-- The [esp-rs](https://github.com/esp-rs) organization has been formed to develop runtime, pac and hal crates for the esp32 and eventually esp8266.
-- Checkout @lexxvir's [project](https://github.com/lexxvir/esp32-hello) for an example of using the esp-idf bindings in a Rust application.
+- The [esp-rs](https://github.com/esp-rs) organization has been formed to develop runtime, pac and hal crates for the esp32 and eventually 
 
 ## FAQ
 
-- `error: intermittent IO error while iterating directory` - try creating that directory
-- `undefined reference to .L` see [this issue](https://github.com/MabezDev/xtensa-rust-quickstart/issues/1)
+- `LLVM ERROR: Error while trying to spill A10 from class AR` - try building in release mode

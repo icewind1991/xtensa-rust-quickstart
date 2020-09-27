@@ -5,13 +5,8 @@ authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 
 [dependencies]
-xtensa-lx106-rt = "0.1.0"
-esp8266-hal = "0.3.0"
-
-# NOTE: if you change this, remember to change all the scripts
-[[bin]]
-name = "esp8266"
-path = "src/main.rs"
+esp8266-hal = { version = "0.4", path = "../esp8266-hal", features = ["all_in_ram"] }
+panic-halt = "0.2.0"
 
 [profile.dev]
 lto = true 
